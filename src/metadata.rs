@@ -17,6 +17,7 @@ pub(crate) struct Dependency {
     pub(crate) name: Option<String>,
     pub(crate) feature: Option<String>,
     pub(crate) optional: bool,
+    pub(crate) os: Vec<String>,
     pub(crate) version_overrides: Vec<VersionOverride>,
 }
 
@@ -28,6 +29,7 @@ impl Dependency {
             name: None,
             feature: None,
             optional: false,
+            os: Vec::new(),
             version_overrides: Vec::new(),
         }
     }
@@ -180,6 +182,21 @@ impl MetaData {
 
                     dep.version_overrides.push(builder.build()?);
                 }
+                ("os", &toml::Value::String(ref os)) => {
+                    dep.os.push(os.clone());
+                }
+                ("os", &toml::Value::Array(ref values)) => {
+                    for value in values.iter() {
+                        match value {
+                            toml::Value::String(ref os) => {
+                                dep.os.push(os.clone());
+                            }
+                            _ => {
+                                bail!("Invalid type in os array ({})", value.type_str())
+                            }
+                        }
+                    }
+                }
                 _ => {
                     bail!("unexpected key {} type {}", key, value.type_str());
                 }
@@ -220,6 +237,7 @@ mod tests {
                         name: None,
                         feature: None,
                         optional: false,
+                        os: vec![],
                         version_overrides: vec![],
                     },
                     Dependency {
@@ -228,6 +246,7 @@ mod tests {
                         name: None,
                         feature: Some("test-feature".into()),
                         optional: false,
+                        os: vec![],
                         version_overrides: vec![],
                     },
                     Dependency {
@@ -236,6 +255,7 @@ mod tests {
                         name: None,
                         feature: Some("another-test-feature".into()),
                         optional: false,
+                        os: vec![],
                         version_overrides: vec![],
                     }
                 ]
@@ -264,6 +284,7 @@ mod tests {
                     name: Some("testlib".into()),
                     feature: None,
                     optional: false,
+                    os: vec![],
                     version_overrides: vec![VersionOverride {
                         key: "v1_2".into(),
                         version: "1.2".into(),
@@ -288,6 +309,7 @@ mod tests {
                     name: None,
                     feature: None,
                     optional: false,
+                    os: vec![],
                     version_overrides: vec![
                         VersionOverride {
                             key: "v5".into(),
@@ -321,6 +343,7 @@ mod tests {
                         name: None,
                         feature: None,
                         optional: true,
+                        os: vec![],
                         version_overrides: vec![],
                     },
                     Dependency {
@@ -329,6 +352,7 @@ mod tests {
                         name: None,
                         feature: None,
                         optional: true,
+                        os: vec![],
                         version_overrides: vec![VersionOverride {
                             key: "v5".into(),
                             version: "5.0".into(),
@@ -342,12 +366,53 @@ mod tests {
                         name: None,
                         feature: None,
                         optional: false,
+                        os: vec![],
                         version_overrides: vec![VersionOverride {
                             key: "v3".into(),
                             version: "3.0".into(),
                             name: None,
                             optional: Some(true),
                         },],
+                    },
+                ]
+            }
+        )
+    }
+
+    #[test]
+    fn parse_os_specific() {
+        let m = parse_file("toml-os-specific").unwrap();
+
+        assert_eq!(
+            m,
+            MetaData {
+                deps: vec![
+                    Dependency {
+                        key: "testanotherlib".into(),
+                        version: Some("1".into()),
+                        name: None,
+                        feature: None,
+                        optional: false,
+                        os: vec!["linux".to_string(), "macos".to_string()],
+                        version_overrides: vec![],
+                    },
+                    Dependency {
+                        key: "testdata".into(),
+                        version: Some("1".into()),
+                        name: None,
+                        feature: None,
+                        optional: false,
+                        os: vec!["linux".to_string()],
+                        version_overrides: vec![],
+                    },
+                    Dependency {
+                        key: "testlib".into(),
+                        version: Some("1".into()),
+                        name: None,
+                        feature: None,
+                        optional: false,
+                        os: vec!["macos".to_string()],
+                        version_overrides: vec![],
                     },
                 ]
             }

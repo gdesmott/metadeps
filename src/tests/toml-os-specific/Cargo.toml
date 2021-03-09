@@ -1,0 +1,4 @@
+[package.metadata.system-deps]
+testdata = { version = "1", os = "linux" }
+testlib = { version = "1", os = "macos" }
+testanotherlib = { version = "1", os = ["linux", "macos"] }

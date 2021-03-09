@@ -92,6 +92,19 @@
 //! v1_18 = { version = "1.18", name = "gstreamer-gl-egl-1.0" }
 //! ```
 //!
+//! # OS specific dependencies
+//!
+//! You can define operating system specific dependencies using the `os` key:
+//!
+//! ```toml
+//! [package.metadata.system-deps]
+//! linuxspecificlib = { version = "1", os = "linux" }
+//! macspecificlib = { version = "1", os = ["ios", "macos"] }
+//! ```
+//!
+//! Those dependencies will be checked only if the crate is built on the OS specified.
+//! See [`std::env::consts::OS`] for the list of operating system names.
+//!
 //! # Overriding build flags
 //! By default `system-deps` automatically defines the required build flags for each dependency using the information fetched from `pkg-config`.
 //! These flags can be overriden using environment variables if needed:
@@ -581,6 +594,14 @@ impl Config {
             let version = version.ok_or_else(|| {
                 Error::InvalidMetadata(format!("No version defined for {}", dep.key))
             })?;
+
+            if !dep.os.is_empty() {
+                // Check if OS matches the required ones
+                let current_os = std::env::consts::OS.to_string();
+                if !dep.os.contains(&current_os) {
+                    continue;
+                }
+            }
 
             let name = &dep.key;
             let build_internal = self.get_build_internal_status(name)?;

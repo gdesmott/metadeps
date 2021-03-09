@@ -823,3 +823,29 @@ fn aggregate() {
         ]
     );
 }
+
+#[test]
+fn os_specific() {
+    let (libraries, _) = toml("toml-os-specific", vec![]).unwrap();
+
+    #[cfg(target_os = "linux")]
+    assert!(libraries.get_by_name("testdata").is_some());
+    #[cfg(target_os = "linux")]
+    assert!(libraries.get_by_name("testlib").is_none());
+    #[cfg(target_os = "linux")]
+    assert!(libraries.get_by_name("testanotherlib").is_some());
+
+    #[cfg(target_os = "macos")]
+    assert!(libraries.get_by_name("testdata").is_none());
+    #[cfg(target_os = "macos")]
+    assert!(libraries.get_by_name("testlib").is_some());
+    #[cfg(target_os = "macos")]
+    assert!(libraries.get_by_name("testanotherlib").is_some());
+
+    #[cfg(target_os = "windows")]
+    assert!(libraries.get_by_name("testdata").is_none());
+    #[cfg(target_os = "windows")]
+    assert!(libraries.get_by_name("testlib").is_none());
+    #[cfg(target_os = "windows")]
+    assert!(libraries.get_by_name("testanotherlib").is_none());
+}
